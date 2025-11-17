@@ -34,7 +34,11 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   http: ^1.6.0
-  flutter_bloc: ^9.1.1
+  provider: ^6.1.2
+  get_it: ^7.7.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  fl_chart: ^0.69.0
   equatable: ^2.0.5
   community_material_icon: ^5.9.55
 

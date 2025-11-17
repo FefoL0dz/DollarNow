@@ -1,30 +1,63 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:dollar_now/features/dollar_quote/domain/entities/dollar_quote.dart';
+import 'package:dollar_now/features/dollar_quote/domain/repositories/dollar_quote_repository.dart';
+import 'package:dollar_now/features/dollar_quote/domain/usecases/get_dollar_quote_history.dart';
+import 'package:dollar_now/features/dollar_quote/domain/usecases/get_latest_dollar_quote.dart';
+import 'package:dollar_now/features/dollar_quote/presentation/providers/dollar_quote_provider.dart';
+import 'package:dollar_now/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dollar_now/main.dart';
+class _FakeDollarQuoteRepository implements DollarQuoteRepository {
+  @override
+  Future<DollarQuote> getLatestQuote({
+    required String currencyCode,
+    required String currencyName,
+  }) async {
+    return DollarQuote(
+      currencyCode: currencyCode,
+      currencyName: currencyName,
+      buyPrice: 4.95,
+      sellPrice: 5.02,
+      quotationTime: DateTime(2024, 11, 20, 13, 30),
+    );
+  }
+
+  @override
+  Future<List<DollarQuote>> getRecentHistory({
+    required String currencyCode,
+    required String currencyName,
+    int days = 7,
+  }) async {
+    final now = DateTime(2024, 11, 20, 13, 30);
+    return List.generate(days, (index) {
+      final date = now.subtract(Duration(days: days - index));
+      return DollarQuote(
+        currencyCode: currencyCode,
+        currencyName: currencyName,
+        buyPrice: 4.8 + index * 0.02,
+        sellPrice: 4.9 + index * 0.02,
+        quotationTime: date,
+      );
+    });
+  }
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const DollarNowApp());
+  testWidgets('shows Banco Central quote data', (WidgetTester tester) async {
+    final repository = _FakeDollarQuoteRepository();
+    final provider = DollarQuoteProvider(
+      getLatestDollarQuote: GetLatestDollarQuote(repository),
+      getDollarQuoteHistory: GetDollarQuoteHistory(repository),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      DollarNowApp(providerBuilder: () => provider, bootstrapData: false),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await provider.loadDashboard();
+    await tester.pumpAndSettle();
+    expect(find.text('Compra'), findsOneWidget);
+    expect(find.text('Venda'), findsOneWidget);
+    expect(find.text('Atualizar cotação'), findsOneWidget);
+    expect(find.textContaining('Histórico dos últimos'), findsOneWidget);
   });
 }

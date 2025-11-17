@@ -1,0 +1,159 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../domain/entities/dollar_quote.dart';
+import '../providers/dollar_quote_provider.dart';
+import 'error_view.dart';
+import 'history_range_selector.dart';
+import 'last_update_chip.dart';
+import 'loading_view.dart';
+import 'quote_history_section.dart';
+import 'currency_selector.dart';
+import 'quote_overview.dart';
+
+class DollarQuoteBody extends StatelessWidget {
+  const DollarQuoteBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Consumer<DollarQuoteProvider>(
+        builder: (context, provider, _) {
+          final state = provider.state;
+
+          if (!state.hasData && state.isLoading) {
+            return const LoadingView(message: 'Buscando cotação atual...');
+          }
+
+          if (!state.hasData && state.hasError) {
+            return ErrorView(
+              message: state.errorMessage!,
+              onRetry: provider.loadDashboard,
+            );
+          }
+
+          final quote = state.quote;
+          if (quote == null) {
+            return const SizedBox.shrink();
+          }
+
+          return RefreshIndicator(
+            onRefresh: provider.loadDashboard,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (state.isLoading) const LinearProgressIndicator(),
+                  const SizedBox(height: 12),
+                  CurrencySelector(provider: provider),
+                  const SizedBox(height: 16),
+                  HistoryRangeSelector(provider: provider),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cotação do ${state.selectedCurrency.name} (${state.selectedCurrency.code})',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  LastUpdateChip(dateTime: quote.quotationTime),
+                  const SizedBox(height: 24),
+                  QuoteOverview(
+                    buyPrice: quote.buyPrice,
+                    sellPrice: quote.sellPrice,
+                  ),
+                  const SizedBox(height: 24),
+                  _QuoteSummaryCard(quote: quote),
+                  const SizedBox(height: 24),
+                  QuoteHistorySection(
+                    state: state,
+                    onRetry: provider.loadDashboard,
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    onPressed: provider.loadDashboard,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Atualizar cotação'),
+                  ),
+                  if (state.hasError) ...[
+                    const SizedBox(height: 16),
+                    _ErrorBanner(message: state.errorMessage!),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _QuoteSummaryCard extends StatelessWidget {
+  const _QuoteSummaryCard({required this.quote});
+
+  final DollarQuote quote;
+
+  @override
+  Widget build(BuildContext context) {
+    final spread = (quote.sellPrice - quote.buyPrice).abs();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Resumo do dia',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Diferença entre compra e venda: R\$ ${spread.toStringAsFixed(4)}',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Valor de referência fornecido diretamente pelo Banco Central do Brasil.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
