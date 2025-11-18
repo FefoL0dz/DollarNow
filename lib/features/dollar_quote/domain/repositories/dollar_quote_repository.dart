@@ -1,3 +1,4 @@
+import '../entities/currency.dart';
 import '../entities/dollar_quote.dart';
 
 abstract class DollarQuoteRepository {
@@ -11,4 +12,6 @@ abstract class DollarQuoteRepository {
     required String currencyName,
     int days = 7,
   });
+
+  Future<List<Currency>> getAvailableCurrencies();
 }

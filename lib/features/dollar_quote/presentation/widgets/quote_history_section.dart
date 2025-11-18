@@ -46,10 +46,11 @@ class QuoteHistorySection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Valores em ${state.selectedCurrency.code}',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        if (state.selectedCurrency != null)
+          Text(
+            'Valores em ${state.selectedCurrency!.code}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         const SizedBox(height: 12),
         _VariationRow(history: history),
         if (state.historyErrorMessage != null) ...[

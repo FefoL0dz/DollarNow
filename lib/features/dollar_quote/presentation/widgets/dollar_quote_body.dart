@@ -8,7 +8,7 @@ import 'history_range_selector.dart';
 import 'last_update_chip.dart';
 import 'loading_view.dart';
 import 'quote_history_section.dart';
-import 'currency_selector.dart';
+import 'currency_carousel.dart';
 import 'quote_overview.dart';
 
 class DollarQuoteBody extends StatelessWidget {
@@ -21,6 +21,22 @@ class DollarQuoteBody extends StatelessWidget {
       child: Consumer<DollarQuoteProvider>(
         builder: (context, provider, _) {
           final state = provider.state;
+
+          final selectedCurrency = state.selectedCurrency;
+          if (selectedCurrency == null) {
+            if (state.isCurrencyLoading) {
+              return const LoadingView(message: 'Buscando moedas...');
+            }
+
+            if (state.currencyErrorMessage != null) {
+              return ErrorView(
+                message: state.currencyErrorMessage!,
+                onRetry: provider.refreshCurrencies,
+              );
+            }
+
+            return const SizedBox.shrink();
+          }
 
           if (!state.hasData && state.isLoading) {
             return const LoadingView(message: 'Buscando cotação atual...');
@@ -47,12 +63,15 @@ class DollarQuoteBody extends StatelessWidget {
                 children: [
                   if (state.isLoading) const LinearProgressIndicator(),
                   const SizedBox(height: 12),
-                  CurrencySelector(provider: provider),
+                  CurrencyCarousel(
+                    provider: provider,
+                    onRetry: provider.refreshCurrencies,
+                  ),
                   const SizedBox(height: 16),
                   HistoryRangeSelector(provider: provider),
                   const SizedBox(height: 16),
                   Text(
-                    'Cotação do ${state.selectedCurrency.name} (${state.selectedCurrency.code})',
+                    'Cotação do ${selectedCurrency.name} (${selectedCurrency.code})',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),

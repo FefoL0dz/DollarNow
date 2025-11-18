@@ -1,7 +1,9 @@
+import 'package:dollar_now/features/dollar_quote/domain/entities/currency.dart';
 import 'package:dollar_now/features/dollar_quote/domain/entities/dollar_quote.dart';
 import 'package:dollar_now/features/dollar_quote/domain/repositories/dollar_quote_repository.dart';
 import 'package:dollar_now/features/dollar_quote/domain/usecases/get_dollar_quote_history.dart';
 import 'package:dollar_now/features/dollar_quote/domain/usecases/get_latest_dollar_quote.dart';
+import 'package:dollar_now/features/dollar_quote/domain/usecases/get_supported_currencies.dart';
 import 'package:dollar_now/features/dollar_quote/presentation/providers/dollar_quote_provider.dart';
 import 'package:dollar_now/main.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +41,14 @@ class _FakeDollarQuoteRepository implements DollarQuoteRepository {
       );
     });
   }
+
+  @override
+  Future<List<Currency>> getAvailableCurrencies() async {
+    return const [
+      Currency(code: 'USD', name: 'Dólar'),
+      Currency(code: 'EUR', name: 'Euro'),
+    ];
+  }
 }
 
 void main() {
@@ -47,6 +57,7 @@ void main() {
     final provider = DollarQuoteProvider(
       getLatestDollarQuote: GetLatestDollarQuote(repository),
       getDollarQuoteHistory: GetDollarQuoteHistory(repository),
+      getSupportedCurrencies: GetSupportedCurrencies(repository),
     );
 
     await tester.pumpWidget(
@@ -59,5 +70,6 @@ void main() {
     expect(find.text('Venda'), findsOneWidget);
     expect(find.text('Atualizar cotação'), findsOneWidget);
     expect(find.textContaining('Histórico dos últimos'), findsOneWidget);
+    expect(find.textContaining('Cotação do'), findsOneWidget);
   });
 }

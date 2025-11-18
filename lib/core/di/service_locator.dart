@@ -9,6 +9,7 @@ import '../../features/dollar_quote/data/models/dollar_quote_model.dart';
 import '../../features/dollar_quote/domain/repositories/dollar_quote_repository.dart';
 import '../../features/dollar_quote/domain/usecases/get_dollar_quote_history.dart';
 import '../../features/dollar_quote/domain/usecases/get_latest_dollar_quote.dart';
+import '../../features/dollar_quote/domain/usecases/get_supported_currencies.dart';
 import '../../features/dollar_quote/presentation/providers/dollar_quote_provider.dart';
 
 final sl = GetIt.instance;
@@ -21,6 +22,7 @@ Future<void> setupServiceLocator() async {
 
   final latestBox = await Hive.openBox<DollarQuoteModel>('latest_quotes');
   final historyBox = await Hive.openBox<List<dynamic>>('history_quotes');
+  final currencyBox = await Hive.openBox<List<dynamic>>('currencies');
 
   sl
     ..registerLazySingleton<http.Client>(() => http.Client())
@@ -28,7 +30,7 @@ Future<void> setupServiceLocator() async {
       () => BcbRemoteDataSourceImpl(sl()),
     )
     ..registerLazySingleton<DollarQuoteLocalDataSource>(
-      () => DollarQuoteLocalDataSourceImpl(latestBox, historyBox),
+      () => DollarQuoteLocalDataSourceImpl(latestBox, historyBox, currencyBox),
     )
     ..registerLazySingleton<DollarQuoteRepository>(
       () => DollarQuoteRepositoryImpl(sl(), sl()),
@@ -39,10 +41,14 @@ Future<void> setupServiceLocator() async {
     ..registerLazySingleton<GetDollarQuoteHistory>(
       () => GetDollarQuoteHistory(sl()),
     )
+    ..registerLazySingleton<GetSupportedCurrencies>(
+      () => GetSupportedCurrencies(sl()),
+    )
     ..registerFactory(
       () => DollarQuoteProvider(
         getLatestDollarQuote: sl(),
         getDollarQuoteHistory: sl(),
+        getSupportedCurrencies: sl(),
       ),
     );
 }

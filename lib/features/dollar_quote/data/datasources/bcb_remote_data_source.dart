@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import '../../../../core/error/dollar_exception.dart';
+import '../models/currency_model.dart';
 import '../models/dollar_quote_model.dart';
 
 abstract class BcbRemoteDataSource {
@@ -18,6 +19,8 @@ abstract class BcbRemoteDataSource {
     required DateTime startDate,
     required DateTime endDate,
   });
+
+  Future<List<CurrencyModel>> fetchAvailableCurrencies();
 }
 
 class BcbRemoteDataSourceImpl implements BcbRemoteDataSource {
@@ -109,6 +112,38 @@ class BcbRemoteDataSourceImpl implements BcbRemoteDataSource {
           ..sort((a, b) => a.quotationTime.compareTo(b.quotationTime));
 
     return quotes;
+  }
+
+  @override
+  Future<List<CurrencyModel>> fetchAvailableCurrencies() async {
+    final uri = Uri.parse(
+      '$_baseUrl/Moedas',
+    ).replace(queryParameters: {r'$top': '1000', r'$format': 'json'});
+
+    final response = await client.get(
+      uri,
+      headers: {'accept': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw const DollarException(
+        'Não foi possível carregar a lista de moedas.',
+      );
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final values = decoded['value'] as List<dynamic>?;
+    if (values == null || values.isEmpty) {
+      throw const DollarException('Nenhuma moeda disponível no momento.');
+    }
+
+    return values
+        .map(
+          (item) =>
+              CurrencyModel.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .where((currency) => currency.code.isNotEmpty)
+        .toList();
   }
 
   Uri _buildDailyUri({required String currencyCode, required DateTime date}) {
