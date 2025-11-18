@@ -22,7 +22,7 @@ class DollarQuoteProvider extends ChangeNotifier {
 
   final List<int> supportedHistoryRanges = const [7, 15, 30];
 
-  final Map<String, CurrencyAccent> _currencyAccents = {
+  final Map<String, CurrencyAccent> _presetAccents = {
     'USD': CurrencyAccent(
       gradient: [Color(0xFF2BC0E4), Color(0xFFEAECC6)],
       primary: Color(0xFF00ACC1),
@@ -37,9 +37,9 @@ class DollarQuoteProvider extends ChangeNotifier {
     ),
     'GBP': CurrencyAccent(
       gradient: [Color(0xFFF6D365), Color(0xFFFDA085)],
-      primary: Color(0xFFF2A03D),
+      primary: Color(0xFFF4A259),
       onPrimary: Colors.white,
-      chartLine: Color(0xFFFFE29C),
+      chartLine: Color(0xFFFFE3B3),
     ),
     'JPY': CurrencyAccent(
       gradient: [Color(0xFFA1C4FD), Color(0xFFC2E9FB)],
@@ -47,7 +47,88 @@ class DollarQuoteProvider extends ChangeNotifier {
       onPrimary: Colors.white,
       chartLine: Color(0xFFC2E9FB),
     ),
+    'BRL': CurrencyAccent(
+      gradient: [Color(0xFF00C9A7), Color(0xFF92FE9D)],
+      primary: Color(0xFF00B894),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFA7FFCF),
+    ),
+    'CAD': CurrencyAccent(
+      gradient: [Color(0xFF43C6AC), Color(0xFFF8FFAE)],
+      primary: Color(0xFF26A69A),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFE6F7A9),
+    ),
+    'AUD': CurrencyAccent(
+      gradient: [Color(0xFFF857A6), Color(0xFFFF5858)],
+      primary: Color(0xFFFF4081),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFF99B9),
+    ),
+    'CHF': CurrencyAccent(
+      gradient: [Color(0xFF7F00FF), Color(0xFFE100FF)],
+      primary: Color(0xFFAA00FF),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFE0B3FF),
+    ),
+    'CNY': CurrencyAccent(
+      gradient: [Color(0xFFFF9966), Color(0xFFFF5E62)],
+      primary: Color(0xFFFF7043),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFAD99),
+    ),
+    'MXN': CurrencyAccent(
+      gradient: [Color(0xFF1FA2FF), Color(0xFF12D8FA), Color(0xFFA6FFCB)],
+      primary: Color(0xFF29B6F6),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFA6FFCB),
+    ),
   };
+
+  final List<CurrencyAccent> _extraAccents = [
+    CurrencyAccent(
+      gradient: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+      primary: Color(0xFF0288D1),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFF81D4FA),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFFFEB692), Color(0xFFEA5455)],
+      primary: Color(0xFFE64A19),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFC4A3),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFF52ACFF), Color(0xFFFFE32C)],
+      primary: Color(0xFF1E88E5),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFE32C),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFF8EC5FC), Color(0xFFE0C3FC)],
+      primary: Color(0xFF7E57C2),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFD1C4E9),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFFFA709A), Color(0xFFFEE140)],
+      primary: Color(0xFFFF9E80),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFE082),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFF21D4FD), Color(0xFFB721FF)],
+      primary: Color(0xFF7C4DFF),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFB388FF),
+    ),
+    CurrencyAccent(
+      gradient: [Color(0xFF6EE7B7), Color(0xFF3B82F6)],
+      primary: Color(0xFF0097A7),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFF9CEC9A),
+    ),
+  ];
 
   final CurrencyAccent _defaultAccent = CurrencyAccent(
     gradient: [const Color(0xFFF093FB), const Color(0xFFF5576C)],
@@ -56,25 +137,44 @@ class DollarQuoteProvider extends ChangeNotifier {
     chartLine: const Color(0xFFFFB5E8),
   );
 
+  final Map<String, CurrencyAccent> _dynamicAccents = {};
+
   DollarQuoteViewState _state = DollarQuoteViewState.initial();
   DollarQuoteViewState get state => _state;
 
   DollarQuote? quoteForCurrency(String code) => _state.cachedQuotes[code];
 
-  CurrencyAccent accentFor(Currency currency) {
-    return _currencyAccents[currency.code] ?? _defaultAccent;
-  }
+  CurrencyAccent accentFor(Currency currency) => _resolveAccent(currency.code);
 
-  CurrencyAccent accentForCode(String code) {
-    return _currencyAccents[code] ?? _defaultAccent;
-  }
+  CurrencyAccent accentForCode(String code) => _resolveAccent(code);
 
   CurrencyAccent get currentAccent {
     final currency = _state.selectedCurrency;
     if (currency == null) {
       return _defaultAccent;
     }
-    return accentFor(currency);
+    return _resolveAccent(currency.code);
+  }
+
+  CurrencyAccent _resolveAccent(String code) {
+    final preset = _presetAccents[code];
+    if (preset != null) {
+      return preset;
+    }
+
+    final assigned = _dynamicAccents[code];
+    if (assigned != null) {
+      return assigned;
+    }
+
+    if (_extraAccents.isNotEmpty) {
+      final accent =
+          _extraAccents[_dynamicAccents.length % _extraAccents.length];
+      _dynamicAccents[code] = accent;
+      return accent;
+    }
+
+    return _defaultAccent;
   }
 
   Future<void> loadDashboard({Currency? currency, int? historyDays}) async {
