@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,7 @@ import '../../features/dollar_quote/domain/usecases/get_dollar_quote_history.dar
 import '../../features/dollar_quote/domain/usecases/get_latest_dollar_quote.dart';
 import '../../features/dollar_quote/domain/usecases/get_supported_currencies.dart';
 import '../../features/dollar_quote/presentation/providers/dollar_quote_provider.dart';
+import '../network/logging_http_client.dart';
 
 final sl = GetIt.instance;
 
@@ -25,7 +27,13 @@ Future<void> setupServiceLocator() async {
   final currencyBox = await Hive.openBox<List<dynamic>>('currencies');
 
   sl
-    ..registerLazySingleton<http.Client>(() => http.Client())
+    ..registerLazySingleton<http.Client>(() {
+      final baseClient = http.Client();
+      if (kDebugMode) {
+        return LoggingHttpClient(baseClient);
+      }
+      return baseClient;
+    })
     ..registerLazySingleton<BcbRemoteDataSource>(
       () => BcbRemoteDataSourceImpl(sl()),
     )
