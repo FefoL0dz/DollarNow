@@ -13,11 +13,13 @@ class QuoteHistorySection extends StatelessWidget {
     required this.state,
     required this.onRetry,
     required this.accent,
+    this.rangeSelector,
   });
 
   final DollarQuoteViewState state;
   final VoidCallback onRetry;
   final CurrencyAccent accent;
+  final Widget? rangeSelector;
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +35,17 @@ class QuoteHistorySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Histórico dos últimos ${state.historyDays} dias',
-          style: Theme.of(context).textTheme.titleMedium,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'Histórico dos últimos ${state.historyDays} dias',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            if (rangeSelector != null) rangeSelector!,
+          ],
         ),
         const SizedBox(height: 12),
         SizedBox(

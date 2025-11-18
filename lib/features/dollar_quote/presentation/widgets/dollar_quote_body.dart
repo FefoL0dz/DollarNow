@@ -69,9 +69,6 @@ class DollarQuoteBody extends StatelessWidget {
                     provider: provider,
                     onRetry: provider.refreshCurrencies,
                   ),
-                  const SizedBox(height: 16),
-                  HistoryRangeSelector(provider: provider),
-                  const SizedBox(height: 16),
                   Text(
                     'Cotação do ${selectedCurrency.name} (${selectedCurrency.code})',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -91,6 +88,7 @@ class DollarQuoteBody extends StatelessWidget {
                     state: state,
                     onRetry: provider.loadDashboard,
                     accent: accent,
+                    rangeSelector: HistoryRangeSelector(provider: provider),
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
