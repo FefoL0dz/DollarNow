@@ -29,15 +29,6 @@ class _CurrencyCarouselState extends State<CurrencyCarousel> {
   bool _isInternalChange = false;
   int _currentIndex = 0;
 
-  static const _cardGradients = [
-    [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-    [Color(0xFF11998E), Color(0xFF38EF7D)],
-    [Color(0xFF833AB4), Color(0xFFFF5F6D)],
-    [Color(0xFF5C258D), Color(0xFFE23265)],
-    [Color(0xFF614385), Color(0xFF516395)],
-    [Color(0xFFFFA17F), Color(0xFFFFD200)],
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -102,7 +93,7 @@ class _CurrencyCarouselState extends State<CurrencyCarousel> {
     }
 
     return SizedBox(
-      height: 180,
+      height: 190,
       child: PageView.builder(
         controller: _controller,
         itemCount: currencies.length,
@@ -116,11 +107,11 @@ class _CurrencyCarouselState extends State<CurrencyCarousel> {
         },
         itemBuilder: (context, index) {
           final currency = currencies[index];
+          final accent = widget.provider.accentFor(currency);
           final isSelected = currency.code == state.selectedCurrency?.code;
           final quote =
               widget.provider.quoteForCurrency(currency.code) ??
               (isSelected ? state.quote : null);
-          final colors = _cardGradients[index % _cardGradients.length];
           return AnimatedScale(
             duration: const Duration(milliseconds: 250),
             scale: isSelected ? 1 : 0.94,
@@ -129,7 +120,7 @@ class _CurrencyCarouselState extends State<CurrencyCarousel> {
               child: _CurrencyCard(
                 currency: currency,
                 isSelected: isSelected,
-                gradientColors: colors,
+                accent: accent,
                 quoteText: quote != null
                     ? _currencyFormatter.format(quote.sellPrice)
                     : 'Toque para carregar',
@@ -147,14 +138,14 @@ class _CurrencyCard extends StatelessWidget {
   const _CurrencyCard({
     required this.currency,
     required this.isSelected,
-    required this.gradientColors,
+    required this.accent,
     required this.quoteText,
     this.lastUpdated,
   });
 
   final Currency currency;
   final bool isSelected;
-  final List<Color> gradientColors;
+  final CurrencyAccent accent;
   final String quoteText;
   final DateTime? lastUpdated;
 
@@ -166,15 +157,15 @@ class _CurrencyCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
-          colors: gradientColors.length == 1
-              ? [gradientColors.first, gradientColors.first]
-              : gradientColors,
+          colors: accent.gradient.length == 1
+              ? [accent.gradient.first, accent.gradient.first]
+              : accent.gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.first.withValues(alpha: 0.3),
+            color: accent.gradient.first.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 8),
           ),
@@ -195,7 +186,7 @@ class _CurrencyCard extends StatelessWidget {
                     Text(
                       currency.name,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: accent.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -203,14 +194,14 @@ class _CurrencyCard extends StatelessWidget {
                     Text(
                       currency.code,
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: Colors.white70,
+                        color: accent.onPrimary.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
                 ),
                 Icon(
                   isSelected ? Icons.check_circle : Icons.circle,
-                  color: Colors.white,
+                  color: accent.onPrimary,
                 ),
               ],
             ),
@@ -220,7 +211,7 @@ class _CurrencyCard extends StatelessWidget {
                 Text(
                   quoteText,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    color: Colors.white,
+                    color: accent.onPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -229,7 +220,7 @@ class _CurrencyCard extends StatelessWidget {
                   Text(
                     'Atualizado em ${DateFormat('dd/MM HH:mm').format(lastUpdated!)}',
                     style: theme.textTheme.labelMedium?.copyWith(
-                      color: Colors.white70,
+                      color: accent.onPrimary.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

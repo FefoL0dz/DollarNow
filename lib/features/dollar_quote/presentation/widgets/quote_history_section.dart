@@ -12,10 +12,12 @@ class QuoteHistorySection extends StatelessWidget {
     super.key,
     required this.state,
     required this.onRetry,
+    required this.accent,
   });
 
   final DollarQuoteViewState state;
   final VoidCallback onRetry;
+  final CurrencyAccent accent;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,10 @@ class QuoteHistorySection extends StatelessWidget {
           child: Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: QuoteHistoryChart(history: history),
+              child: QuoteHistoryChart(
+                history: history,
+                accentColor: accent.chartLine,
+              ),
             ),
           ),
         ),
@@ -52,10 +57,13 @@ class QuoteHistorySection extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
         const SizedBox(height: 12),
-        _VariationRow(history: history),
+        _VariationRow(history: history, accent: accent),
         if (state.historyErrorMessage != null) ...[
           const SizedBox(height: 12),
-          _HistoryWarningBanner(message: state.historyErrorMessage!),
+          _HistoryWarningBanner(
+            message: state.historyErrorMessage!,
+            accent: accent,
+          ),
         ],
       ],
     );
@@ -63,9 +71,10 @@ class QuoteHistorySection extends StatelessWidget {
 }
 
 class _VariationRow extends StatelessWidget {
-  const _VariationRow({required this.history});
+  const _VariationRow({required this.history, required this.accent});
 
   final List<DollarQuote> history;
+  final CurrencyAccent accent;
 
   @override
   Widget build(BuildContext context) {
@@ -85,22 +94,22 @@ class _VariationRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: accent.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Icon(
             isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-            color: isPositive
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.error,
+            color: accent.primary,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               '${isPositive ? 'Alta' : 'Queda'} de ${formatter.format(delta.abs())} (${percent.toStringAsFixed(2)}%) desde a última cotação.',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ],
@@ -112,30 +121,28 @@ class _VariationRow extends StatelessWidget {
 }
 
 class _HistoryWarningBanner extends StatelessWidget {
-  const _HistoryWarningBanner({required this.message});
+  const _HistoryWarningBanner({required this.message, required this.accent});
 
   final String message;
+  final CurrencyAccent accent;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.tertiaryContainer,
+        color: accent.primary.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline,
-            color: Theme.of(context).colorScheme.onTertiaryContainer,
-          ),
+          Icon(Icons.info_outline, color: accent.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onTertiaryContainer,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

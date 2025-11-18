@@ -10,6 +10,7 @@ class HistoryRangeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = provider.state;
+    final accent = provider.currentAccent;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -26,6 +27,18 @@ class HistoryRangeSelector extends StatelessWidget {
               label: Text('$days dias'),
               selected: isSelected,
               onSelected: (_) => provider.selectHistoryRange(days),
+              labelStyle: TextStyle(
+                color: isSelected ? accent.onPrimary : null,
+                fontWeight: isSelected ? FontWeight.bold : null,
+              ),
+              selectedColor: accent.primary,
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHigh,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: accent.primary.withValues(alpha: 0.4)),
+              ),
             );
           }).toList(),
         ),

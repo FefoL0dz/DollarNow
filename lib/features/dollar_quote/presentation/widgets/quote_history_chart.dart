@@ -5,10 +5,14 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/dollar_quote.dart';
 
 class QuoteHistoryChart extends StatelessWidget {
-  QuoteHistoryChart({super.key, required this.history})
-    : _dateFormatter = DateFormat('dd/MM');
+  QuoteHistoryChart({
+    super.key,
+    required this.history,
+    required this.accentColor,
+  }) : _dateFormatter = DateFormat('dd/MM');
 
   final List<DollarQuote> history;
+  final Color accentColor;
   final DateFormat _dateFormatter;
 
   @override
@@ -82,14 +86,12 @@ class QuoteHistoryChart extends StatelessWidget {
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            color: Theme.of(context).colorScheme.primary,
+            color: accentColor,
             barWidth: 3,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.15),
+              color: accentColor.withValues(alpha: 0.2),
             ),
           ),
         ],

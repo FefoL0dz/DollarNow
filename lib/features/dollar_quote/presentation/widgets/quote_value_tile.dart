@@ -7,11 +7,17 @@ class QuoteValueTile extends StatelessWidget {
     required this.label,
     required this.value,
     this.backgroundColor,
+    this.backgroundGradient,
+    this.labelColor,
+    this.valueColor,
   }) : _currencyFormatter = NumberFormat.simpleCurrency(locale: 'pt_BR');
 
   final String label;
   final double value;
   final Color? backgroundColor;
+  final Gradient? backgroundGradient;
+  final Color? labelColor;
+  final Color? valueColor;
   final NumberFormat _currencyFormatter;
 
   @override
@@ -19,9 +25,11 @@ class QuoteValueTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color:
-            backgroundColor ??
-            Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: backgroundGradient == null
+            ? backgroundColor ??
+                  Theme.of(context).colorScheme.surfaceContainerHigh
+            : null,
+        gradient: backgroundGradient,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -30,15 +38,16 @@ class QuoteValueTile extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
+              color: labelColor ?? Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 12),
           Text(
             _currencyFormatter.format(value),
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: valueColor,
+            ),
           ),
         ],
       ),

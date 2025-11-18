@@ -54,6 +54,8 @@ class DollarQuoteBody extends StatelessWidget {
             return const SizedBox.shrink();
           }
 
+          final accent = provider.accentFor(selectedCurrency);
+
           return RefreshIndicator(
             onRefresh: provider.loadDashboard,
             child: SingleChildScrollView(
@@ -80,19 +82,27 @@ class DollarQuoteBody extends StatelessWidget {
                   QuoteOverview(
                     buyPrice: quote.buyPrice,
                     sellPrice: quote.sellPrice,
+                    accent: accent,
                   ),
                   const SizedBox(height: 24),
-                  _QuoteSummaryCard(quote: quote),
+                  _QuoteSummaryCard(quote: quote, accent: accent),
                   const SizedBox(height: 24),
                   QuoteHistorySection(
                     state: state,
                     onRetry: provider.loadDashboard,
+                    accent: accent,
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: provider.loadDashboard,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Atualizar cotação'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: accent.primary,
+                      foregroundColor: accent.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                   if (state.hasError) ...[
                     const SizedBox(height: 16),
@@ -109,14 +119,24 @@ class DollarQuoteBody extends StatelessWidget {
 }
 
 class _QuoteSummaryCard extends StatelessWidget {
-  const _QuoteSummaryCard({required this.quote});
+  const _QuoteSummaryCard({required this.quote, required this.accent});
 
   final DollarQuote quote;
+  final CurrencyAccent accent;
 
   @override
   Widget build(BuildContext context) {
     final spread = (quote.sellPrice - quote.buyPrice).abs();
-    return Card(
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: accent.gradient,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -124,17 +144,24 @@ class _QuoteSummaryCard extends StatelessWidget {
           children: [
             Text(
               'Resumo do dia',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: accent.onPrimary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               'Diferença entre compra e venda: R\$ ${spread.toStringAsFixed(4)}',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: accent.onPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Valor de referência fornecido diretamente pelo Banco Central do Brasil.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: accent.onPrimary.withValues(alpha: 0.9),
+              ),
             ),
           ],
         ),

@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/error/dollar_exception.dart';
 import '../../domain/entities/currency.dart';
@@ -22,10 +22,60 @@ class DollarQuoteProvider extends ChangeNotifier {
 
   final List<int> supportedHistoryRanges = const [7, 15, 30];
 
+  final Map<String, CurrencyAccent> _currencyAccents = {
+    'USD': CurrencyAccent(
+      gradient: [Color(0xFF2BC0E4), Color(0xFFEAECC6)],
+      primary: Color(0xFF00ACC1),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFF8EE8FF),
+    ),
+    'EUR': CurrencyAccent(
+      gradient: [Color(0xFFFF9A9E), Color(0xFFFAD0C4)],
+      primary: Color(0xFFFF6F91),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFC2D1),
+    ),
+    'GBP': CurrencyAccent(
+      gradient: [Color(0xFFF6D365), Color(0xFFFDA085)],
+      primary: Color(0xFFF2A03D),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFFFE29C),
+    ),
+    'JPY': CurrencyAccent(
+      gradient: [Color(0xFFA1C4FD), Color(0xFFC2E9FB)],
+      primary: Color(0xFF64B5F6),
+      onPrimary: Colors.white,
+      chartLine: Color(0xFFC2E9FB),
+    ),
+  };
+
+  final CurrencyAccent _defaultAccent = CurrencyAccent(
+    gradient: [const Color(0xFFF093FB), const Color(0xFFF5576C)],
+    primary: const Color(0xFFF06292),
+    onPrimary: Colors.white,
+    chartLine: const Color(0xFFFFB5E8),
+  );
+
   DollarQuoteViewState _state = DollarQuoteViewState.initial();
   DollarQuoteViewState get state => _state;
 
   DollarQuote? quoteForCurrency(String code) => _state.cachedQuotes[code];
+
+  CurrencyAccent accentFor(Currency currency) {
+    return _currencyAccents[currency.code] ?? _defaultAccent;
+  }
+
+  CurrencyAccent accentForCode(String code) {
+    return _currencyAccents[code] ?? _defaultAccent;
+  }
+
+  CurrencyAccent get currentAccent {
+    final currency = _state.selectedCurrency;
+    if (currency == null) {
+      return _defaultAccent;
+    }
+    return accentFor(currency);
+  }
 
   Future<void> loadDashboard({Currency? currency, int? historyDays}) async {
     await _ensureCurrenciesLoaded();
@@ -245,4 +295,20 @@ class DollarQuoteViewState {
   }
 
   static const Object _sentinel = Object();
+}
+
+class CurrencyAccent {
+  const CurrencyAccent({
+    required this.gradient,
+    required this.primary,
+    required this.onPrimary,
+    required this.chartLine,
+  });
+
+  final List<Color> gradient;
+  final Color primary;
+  final Color onPrimary;
+  final Color chartLine;
+
+  Color get chartFill => chartLine.withValues(alpha: 0.2);
 }
