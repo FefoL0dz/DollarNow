@@ -6,6 +6,7 @@ import 'package:dollar_now/model/cotacao_moeda.dart';
 import 'package:dollar_now/model/moeda.dart';
 import 'package:dollar_now/service/base_api_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 const baseUrl = 'https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata';
 
@@ -14,6 +15,9 @@ const TOP_100 = '100';
 const JSON_FORMAT = 'json';
 
 class OlindaService extends BaseApiService {
+  final http.Client client;
+
+  OlindaService({http.Client? client}) : client = client ?? http.Client();
 
   Future<List<CotacaoMoeda>> fetchCotacaoMoeda({required Moeda moeda, required String date}) async {
     String selection = '${PARIDADE_COMPRA},${PARIDADE_VENDA},${COTACAO_COMPRA},${COTACAO_VENDA},${DATA_HORA_COTACAO},${TIPO_BOLETIM}';
@@ -37,6 +41,17 @@ class OlindaService extends BaseApiService {
     return cotacoesDolar;
   }
 
+  Future<List<CotacaoDolar>> fetchCotacaoDolarPeriodo({required String dataInicial, required String dataFinalCotacao}) async {
+    String selection = '${COTACAO_COMPRA},${COTACAO_VENDA},${DATA_HORA_COTACAO}';
+    String url = '$baseUrl/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial=\'$dataInicial\'&@dataFinalCotacao=\'$dataFinalCotacao\'&\$top=$TOP_100&\$format=$JSON_FORMAT&\$select=$selection';
+    List<CotacaoDolar> cotacoesDolar = <CotacaoDolar>[];
+    String response = await performRequest(url);
+    Map<String, dynamic> map = jsonDecode(response);
+    cotacoesDolar = (map['value'] as List<dynamic>).map((element) =>
+        CotacaoDolar.fromJson(element)).toList();
+    return cotacoesDolar;
+  }
+
   Future<List<Moeda>> fetchMoedas() async {
     const url = '$baseUrl/Moedas?\$top=$TOP_100&\$format=$JSON_FORMAT&\$select=simbolo,nomeFormatado,tipoMoeda';
     List<Moeda> moedas = <Moeda>[];
@@ -48,20 +63,22 @@ class OlindaService extends BaseApiService {
   }
 
   Future<String> performRequest(String url) async {
-    http.Client httpClient = http.Client();
     final uri = Uri.parse(url);
     try {
-      final response = await httpClient.get(uri);
+      final response = await client.get(uri);
       if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(url, response.body);
         return response.body;
       } else {
         throw Exception();
       }
     } catch(exception) {
-      if(exception is Exception) {
-        throw Exception('${(exception as Exception).toString()}');
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(url)) {
+        return prefs.getString(url)!;
       }
-      return '';
+      throw Exception('Failed to perform request and no cache available: $exception');
     }
   }
 }

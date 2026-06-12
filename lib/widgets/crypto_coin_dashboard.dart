@@ -1,152 +1,109 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-class CryptoCoinDashboard extends StatelessWidget {
+import 'package:dollar_now/model/crypto_coin.dart';
+import 'package:dollar_now/service/crypto/crypto_service_factory.dart';
+
+class CryptoCoinDashboard extends StatefulWidget {
+  @override
+  _CryptoCoinDashboardState createState() => _CryptoCoinDashboardState();
+}
+
+class _CryptoCoinDashboardState extends State<CryptoCoinDashboard> {
+  late Future<List<CryptoCoin>> _coinsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCoins();
+  }
+
+  void _fetchCoins() {
+    setState(() {
+      _coinsFuture = CryptoServiceFactory.getActiveService().fetchTopCoins(limit: 10);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-        home: Scaffold(
-            body: Container(
-              padding: EdgeInsets.fromLTRB(10, 30, 10, 10),
-              height: 220,
-              width: double.maxFinite,
-              child: cardWidget(),
-            )
-        )
-    );
-  }
-
-  Widget cardWidget() {
-    return Card(
-      elevation: 5,
-      child: Padding(
-        padding: EdgeInsets.all(7),
-        child: Stack(children: <Widget>[
-          Align(
-            alignment: Alignment.centerRight,
-            child: Stack(
-              children: <Widget>[
-                Padding(
-                    padding: const EdgeInsets.only(left: 10, top: 5),
-                    // child: Column(
-                    //   children: <Widget>[
-                    //     Row(
-                    //       children: <Widget>[
-                    //         cryptoIcon(),
-                    //         SizedBox(
-                    //           height: 10,
-                    //         ),
-                    //         cryptoNameSymbol(),
-                    //         Spacer(),
-                    //         cryptoChange(),
-                    //         SizedBox(
-                    //           width: 10,
-                    //         ),
-                    //         changeIcon(),
-                    //         SizedBox(
-                    //           width: 20,
-                    //         )
-                    //       ],
-                    //     ),
-                    //     Row(
-                    //       children: <Widget>[cryptoAmount()],
-                    //     )
-                    //   ],
-                    // )
-                  ),
+    return FutureBuilder<List<CryptoCoin>>(
+      future: _coinsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.red, size: 40),
+                SizedBox(height: 10),
+                Text('Failed to load crypto data', style: TextStyle(color: Colors.red)),
+                TextButton(
+                  onPressed: _fetchCoins,
+                  child: Text('Retry'),
+                )
               ],
             ),
-          )
-        ]),
-      ),
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No crypto data available.'));
+        }
+
+        final coins = snapshot.data!;
+        
+        return ListView.builder(
+          itemCount: coins.length,
+          itemBuilder: (context, index) {
+            final coin = coins[index];
+            return _buildCoinCard(coin);
+          },
+        );
+      },
     );
   }
 
-  Widget cryptoIcon() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 15.0),
-      child: Align(
-          alignment: Alignment.centerLeft,
-          child: Icon(
-            Icons.calendar_today,
-            color: Colors.amber,
-            size: 40,
-          )),
-    );
-  }
-  Widget cryptoNameSymbol() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: RichText(
-        text: TextSpan(
-          text: 'Bitcoin',
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.black, fontSize: 20),
-          children: <TextSpan>[
-            TextSpan(
-                text: '\nBTC',
-                style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-  Widget cryptoChange() {
-    return Align(
-      alignment: Alignment.topRight,
-      child: RichText(
-        text: TextSpan(
-          text: '+3.67%',
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.green, fontSize: 20),
-          children: <TextSpan>[
-            TextSpan(
-                text: '\n+202.835',
-                style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
-  Widget changeIcon() {
-    return Align(
-        alignment: Alignment.topRight,
-        child: Icon(
-          Icons.architecture_outlined,
-          color: Colors.green,
-          size: 30,
-        ));
-  }
-  Widget cryptoAmount() {
-    return Align(
-      alignment: Alignment.centerLeft,
+  Widget _buildCoinCard(CryptoCoin coin) {
+    final isPositive = coin.change24h >= 0;
+    final changeColor = isPositive ? Colors.green : Colors.red;
+
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
-        padding: const EdgeInsets.only(left: 20.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
-          children: <Widget>[
-            RichText(
-              textAlign: TextAlign.left,
-              text: TextSpan(
-                text: '\n\$12.279',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 35,
-                ),
-                children: <TextSpan>[
-                  TextSpan(
-                      text: '\n0.1349',
-                      style: TextStyle(
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
+          children: [
+            if (coin.imageUrl != null)
+              Image.network(coin.imageUrl!, width: 40, height: 40, errorBuilder: (c,e,s) => Icon(Icons.monetization_on, size: 40, color: Colors.amber))
+            else
+              Icon(Icons.monetization_on, size: 40, color: Colors.amber),
+            
+            SizedBox(width: 15),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(coin.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(coin.symbol, style: TextStyle(color: Colors.grey, fontSize: 14)),
                 ],
               ),
+            ),
+            
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('\$${coin.priceUsd.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Row(
+                  children: [
+                    Icon(isPositive ? Icons.arrow_upward : Icons.arrow_downward, color: changeColor, size: 14),
+                    Text(
+                      '${coin.change24h.toStringAsFixed(2)}%',
+                      style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ],
         ),

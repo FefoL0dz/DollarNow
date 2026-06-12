@@ -9,6 +9,8 @@ import 'package:dollar_now/widgets/bordered_text_button.dart';
 import 'package:dollar_now/widgets/categories_scroller.dart';
 import 'package:dollar_now/widgets/crypto_coin_dashboard.dart';
 import 'package:dollar_now/widgets/dollar_monitor_card.dart';
+import 'package:dollar_now/widgets/dollar_historical_chart.dart';
+import 'package:dollar_now/widgets/currency_converter_sheet.dart';
 import 'package:community_material_icon/community_material_icon.dart';
 import 'package:flutter/material.dart';
 
@@ -27,22 +29,25 @@ class _DollarNowHomePageState extends State<DollarNowHomePage> implements IDolla
   OlindaService _service = OlindaService();
   bool _isFirstPageSelected = true;
 
-  _instantiateService() {
-    if(_service == null)
-      _service = OlindaService();
-  }
-
   _fetchCoins(DateTime dateTime) async {
-    _isLoading = true;
-    _instantiateService();
-    List<Moeda> coins = await _service.fetchMoedas();
-    List<CotacaoDolar> cotacoesDolar = await _service.fetchCotacaoDolar(date: DateTimeUtils.usFormat(dateTime));
-    CotacaoDolar? cotacaoDolar = (cotacoesDolar == null || cotacoesDolar.isEmpty) ? null : cotacoesDolar[0];
     setState(() {
-      this.coins = coins;
-      this.cotacaoDolar = cotacaoDolar;
-      this._isLoading = false;
+      _isLoading = true;
     });
+    try {
+      List<Moeda> fetchedCoins = await _service.fetchMoedas();
+      List<CotacaoDolar> cotacoesDolar = await _service.fetchCotacaoDolar(date: DateTimeUtils.usFormat(dateTime));
+      CotacaoDolar? fetchedCotacaoDolar = (cotacoesDolar.isEmpty) ? null : cotacoesDolar[0];
+      setState(() {
+        this.coins = fetchedCoins;
+        this.cotacaoDolar = fetchedCotacaoDolar;
+        this._isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        this._isLoading = false;
+        // Optionally handle error state here
+      });
+    }
   }
 
   @override
@@ -113,40 +118,47 @@ class _DollarNowHomePageState extends State<DollarNowHomePage> implements IDolla
           ],
         ),
         body: _isFirstPageSelected ? _firstPageBody(size) : _secondPageBody(size),
+        floatingActionButton: _isLoading || cotacaoDolar == null ? null : FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => CurrencyConverterSheet(cotacaoDolar: cotacaoDolar!),
+            );
+          },
+          backgroundColor: Colors.greenAccent,
+          child: Icon(Icons.calculate, color: Colors.black, size: 30),
+        ),
       ),
     );
   }
 
   void _informativePopUp(BuildContext context) {
-          showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                  ),
-                  backgroundColor: Colors.white.withOpacity(0.45),
-                  content: Stack(
-                    clipBehavior: Clip.none, children: <Widget>[
-                      Positioned(
-                        right: -40.0,
-                        top: -40.0,
-                        child: InkResponse(
-                          onTap: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: CircleAvatar(
-                            child: Icon(Icons.close),
-                            backgroundColor: Colors.grey,
-                            foregroundColor: kAlertTextColor,
-                          ),
-                        ),
-                      ),
-                      Text(kInformativeText, style: TextStyle(fontSize: 20),),
-                    ],
-                  ),
-                );
-              });
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          backgroundColor: Colors.white.withAlpha(240),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Informação', style: TextStyle(fontWeight: FontWeight.bold)),
+              IconButton(
+                icon: Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          content: Text(
+            kInformativeText,
+            style: TextStyle(fontSize: 18),
+          ),
+        );
+      });
   }
 
   Widget _firstPageBody(Size size) {
@@ -177,15 +189,28 @@ class _DollarNowHomePageState extends State<DollarNowHomePage> implements IDolla
             ),
           ),
           SizedBox(width: 20, height: 20,),
-          Container(
-            padding: EdgeInsets.fromLTRB(10,10,10,0),
-            height: 220,
-            width: double.maxFinite,
-            child: _isLoading ? Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.blueGrey,
-                )
-            ) : DollarMonitorCard(cotacaoDolar: cotacaoDolar, delegate: this,),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.fromLTRB(10,10,10,0),
+              width: double.maxFinite,
+              child: _isLoading ? Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.blueGrey,
+                  )
+              ) : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    DollarMonitorCard(cotacaoDolar: cotacaoDolar, delegate: this,),
+                    SizedBox(height: 20),
+                    Container(
+                      height: 280,
+                      child: DollarHistoricalChart()
+                    ),
+                    SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -215,17 +240,18 @@ class _DollarNowHomePageState extends State<DollarNowHomePage> implements IDolla
           const SizedBox(
             height: 12,
           ),
-          Container(
-            padding: EdgeInsets.fromLTRB(10,10,10,0),
-            height: 220,
-            width: double.maxFinite,
-            child: _isLoading ? Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.blueGrey,
-                )
-            ) : CryptoCoinDashboard(
-              // cotacaoDolar: cotacaoDolar,
-              // delegate: this,
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.fromLTRB(10,10,10,0),
+              width: double.maxFinite,
+              child: _isLoading ? Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.blueGrey,
+                  )
+              ) : CryptoCoinDashboard(
+                // cotacaoDolar: cotacaoDolar,
+                // delegate: this,
+              ),
             ),
           ),
         ],

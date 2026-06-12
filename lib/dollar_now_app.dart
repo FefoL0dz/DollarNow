@@ -14,16 +14,16 @@ class DollarNowApp extends StatelessWidget {
     return MaterialApp(
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-      // supportedLocales: const [
-      //   Locale('pt'),
-      //   Locale('Br')
-      // ],
+      supportedLocales: const [
+        Locale('pt'),
+        Locale('Br')
+      ],
       title: 'Dollar Now Application',
       theme: ThemeData(
         primaryColor: ColorUtils.numUsp93606070(),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
         initialRoute: '/',
       home: DollarNowHomePage(),
